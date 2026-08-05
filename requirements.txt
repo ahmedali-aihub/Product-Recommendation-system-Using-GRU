@@ -1,0 +1,11 @@
+pandas
+pyarrow
+numpy
+mysql-connector-python
+python-dotenv
+tensorflow
+scikit-learn
+jupyterlab
+fastapi
+uvicorn[standard]
+pydantic

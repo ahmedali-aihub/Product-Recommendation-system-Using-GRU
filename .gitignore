@@ -1,0 +1,33 @@
+.env
+
+# raw data (too large for git)
+data/raw/
+data/interim/
+data/processed/
+*.csv
+
+# trained model artifacts
+models/*.h5
+models/*.json
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# db bulk-load logs
+db/load_output.log
+
+# scratch run logs (training/install/eval output redirected to a file)
+*.log
+
+# frontend
+app/node_modules/
+app/dist/
+
+# scratch artifacts (temp code bundle for Colab, not source)
+src.zip
+
+# local Claude Code session data, not meant for the public repo
+.claude/
