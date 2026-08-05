@@ -37,3 +37,14 @@ export function getProductImageUrl(product) {
   const index = (product.product_id % count) + 1;
   return `/images/${category}/${index}.jpg`;
 }
+
+// Cover art for a category tile (no specific product to key off of) --
+// just use the first image in that category's pool.
+export function getCategoryImageUrl(categoryTop) {
+  const count = categoryTop ? CATEGORY_IMAGE_COUNTS[categoryTop] : 0;
+  if (!count) {
+    const genericCount = CATEGORY_IMAGE_COUNTS.generic;
+    return genericCount ? "/images/generic/1.jpg" : "/icons/generic.svg";
+  }
+  return `/images/${categoryTop}/1.jpg`;
+}

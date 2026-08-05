@@ -1,6 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 
 import CartDrawer from "./components/CartDrawer.jsx";
+import Footer from "./components/Footer.jsx";
 import Navbar from "./components/Navbar.jsx";
 import ProductDetailPage from "./pages/ProductDetailPage.jsx";
 import ProductListPage from "./pages/ProductListPage.jsx";
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/products/:productId" element={<ProductDetailPage />} />
         </Routes>
       </main>
+      <Footer />
     </>
   );
 }

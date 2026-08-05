@@ -4,6 +4,8 @@ import { useParams, useSearchParams } from "react-router-dom";
 
 import { api } from "@/api/client";
 import CategoryFilterBar from "@/components/CategoryFilterBar.jsx";
+import CategoryProductRow from "@/components/CategoryProductRow.jsx";
+import CategoryShowcase from "@/components/CategoryShowcase.jsx";
 import Pagination from "@/components/Pagination.jsx";
 import ProductCard from "@/components/ProductCard.jsx";
 import RecommendationsSection from "@/components/RecommendationsSection.jsx";
@@ -19,6 +21,9 @@ const cardVariants = {
   hidden: { opacity: 0, y: 12 },
   show: { opacity: 1, y: 0 },
 };
+
+const formatCategoryLabel = (category) =>
+  category.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 export default function ProductListPage() {
   const { category } = useParams();
@@ -56,15 +61,20 @@ export default function ProductListPage() {
 
   return (
     <div>
-      {showHomeRecommendations && (
-        <RecommendationsSection
-          productIds={getViewedProducts()}
-          title="Recommended for you"
-          className="mb-10"
-        />
-      )}
-
-      {search ? (
+      {showHomeRecommendations ? (
+        <>
+          <CategoryShowcase categories={categories} />
+          <RecommendationsSection productIds={getViewedProducts()} title="Recommended for you" />
+          {categories.slice(0, 4).map((c) => (
+            <CategoryProductRow
+              key={c.category}
+              category={c.category}
+              title={`Top in ${formatCategoryLabel(c.category)}`}
+            />
+          ))}
+          <h2 className="mb-4 mt-12 text-lg font-semibold tracking-tight">All Products</h2>
+        </>
+      ) : search ? (
         <h1 className="mb-4 text-lg font-medium">
           Search results for <span className="font-semibold">&ldquo;{search}&rdquo;</span>
         </h1>

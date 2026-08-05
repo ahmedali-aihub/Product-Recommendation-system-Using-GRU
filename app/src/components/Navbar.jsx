@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { api } from "@/api/client";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/context/CartContext.jsx";
@@ -35,11 +34,11 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center gap-4">
-        <Link to="/" className="text-lg font-semibold tracking-tight">
+        <Link to="/" className="flex-shrink-0 text-lg font-semibold tracking-tight">
           Storefront
         </Link>
 
-        <form onSubmit={handleSubmit} className="relative hidden w-56 flex-shrink-0 sm:block">
+        <form onSubmit={handleSubmit} className="relative max-w-xl flex-1">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
@@ -49,16 +48,6 @@ export default function Navbar() {
             className="h-9 pl-8"
           />
         </form>
-
-        <nav className="flex flex-1 items-center gap-2 overflow-x-auto py-2">
-          {categories.map((c) => (
-            <Link key={c.category} to={`/category/${c.category}`}>
-              <Badge variant="secondary" className="whitespace-nowrap font-normal">
-                {c.category}
-              </Badge>
-            </Link>
-          ))}
-        </nav>
 
         <ThemeToggle />
 
@@ -71,6 +60,23 @@ export default function Navbar() {
           )}
         </Button>
       </div>
+
+      <nav className="border-t">
+        <div className="container flex items-center gap-4 overflow-x-auto py-2 text-sm">
+          <Link to="/" className="flex-shrink-0 whitespace-nowrap text-muted-foreground hover:text-foreground">
+            All
+          </Link>
+          {categories.map((c) => (
+            <Link
+              key={c.category}
+              to={`/category/${c.category}`}
+              className="flex-shrink-0 whitespace-nowrap capitalize text-muted-foreground hover:text-foreground"
+            >
+              {c.category.replace("_", " ")}
+            </Link>
+          ))}
+        </div>
+      </nav>
     </header>
   );
 }
