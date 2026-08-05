@@ -228,6 +228,7 @@ product-recommendation-project/
 │   └── item_vocab.json
 ├── tests/
 │   └── test_sessions.py       # at least one test on session-building edge cases
+├── logs/                       # gitignored -- scratch output from training/export/install runs
 ├── requirements.txt
 └── README.md
 ```

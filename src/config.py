@@ -1,5 +1,6 @@
 """Paths, hyperparameters, and constants shared across the pipeline."""
 
+import os
 from pathlib import Path
 
 # --- Paths ---
@@ -51,4 +52,13 @@ WARM_START_LEARNING_RATE = 1e-4
 # --- Serving layer (storefront v1) ---
 DEFAULT_PAGE_SIZE = 24
 MAX_PAGE_SIZE = 100
-FRONTEND_DEV_ORIGIN = "http://localhost:5173"  # Vite's default dev port, used for CORS
+
+# CORS origins allowed to call the API. Comma-separated in FRONTEND_ORIGINS
+# (e.g. the deployed Vercel URL in production); defaults to just the local
+# Vite dev server when unset, so local dev needs no env var at all.
+_frontend_origins_env = os.environ.get("FRONTEND_ORIGINS")
+FRONTEND_ORIGINS = (
+    [origin.strip() for origin in _frontend_origins_env.split(",") if origin.strip()]
+    if _frontend_origins_env
+    else ["http://localhost:5173"]
+)

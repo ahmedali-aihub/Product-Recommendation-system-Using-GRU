@@ -7,14 +7,14 @@ Run as: python -m uvicorn src.serving.main:app --reload --port 8000
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.config import FRONTEND_DEV_ORIGIN
+from src.config import FRONTEND_ORIGINS
 from src.serving.routers import cart, categories, predict, products
 
 app = FastAPI(title="Product Recommender Storefront")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_DEV_ORIGIN],
+    allow_origins=FRONTEND_ORIGINS,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
