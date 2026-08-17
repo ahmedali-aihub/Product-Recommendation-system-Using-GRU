@@ -29,36 +29,3 @@ app.include_router(predict.router, prefix="/api")
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
-
-
-# Temporary diagnostic route -- narrows down a "Name or service not known"
-# DNS failure connecting to Aiven that only reproduces on Render's network,
-# not locally. Remove once the root cause is confirmed fixed.
-@app.get("/api/debug/db")
-def debug_db():
-    import os
-    import socket
-
-    host = os.environ.get("MYSQL_HOST")
-    port = int(os.environ.get("MYSQL_PORT", 3306))
-    result = {"host": host, "port": port}
-
-    try:
-        result["dns"] = socket.getaddrinfo(host, port)
-        result["dns_ok"] = True
-    except Exception as e:
-        result["dns_ok"] = False
-        result["dns_error"] = f"{type(e).__name__}: {e}"
-        return result
-
-    try:
-        from src.data.db import get_connection
-
-        conn = get_connection()
-        conn.close()
-        result["connect_ok"] = True
-    except Exception as e:
-        result["connect_ok"] = False
-        result["connect_error"] = f"{type(e).__name__}: {e}"
-
-    return result
