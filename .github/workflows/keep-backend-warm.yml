@@ -1,0 +1,17 @@
+name: Keep backend warm
+
+# Render's free tier spins the backend down after ~15 min idle, and the
+# next request pays a slow cold start (importing TensorFlow + building the
+# model). Pinging /api/health on an interval shorter than that keeps it
+# always warm.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend health endpoint
+        run: curl -fsS --max-time 100 https://product-recommender-api-7ycb.onrender.com/api/health
