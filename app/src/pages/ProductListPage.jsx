@@ -63,9 +63,15 @@ export default function ProductListPage() {
     <div>
       {showHomeRecommendations ? (
         <>
+          <div className="mb-10 rounded-xl border bg-card p-4 text-sm text-muted-foreground">
+            This store recommends products using a neural network trained on real shopping
+            sessions -- not your account or purchase history. Click into a few products below,
+            then come back here: <span className="text-foreground">Recommended for you</span> will
+            update live based on what you just viewed.
+          </div>
           <CategoryShowcase categories={categories} />
           <RecommendationsSection productIds={getViewedProducts()} title="Recommended for you" />
-          {categories.slice(0, 4).map((c) => (
+          {categories.slice(0, 2).map((c) => (
             <CategoryProductRow
               key={c.category}
               category={c.category}
