@@ -8,16 +8,19 @@ export default function CategoryShowcase({ categories }) {
   return (
     <section>
       <h2 className="mb-4 text-lg font-semibold tracking-tight">Shop by Category</h2>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-        {categories.length === 0
-          ? Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="space-y-2">
+      {/* A horizontal scroll strip instead of a multi-row grid -- keeps all
+          categories reachable without the homepage opening on two screens'
+          worth of tiles before any actual products show up. */}
+      <div className="flex gap-4 overflow-x-auto pb-2">
+        {(categories.length === 0 ? Array.from({ length: 6 }) : categories).map((c, i) => (
+          <div key={c?.category ?? i} className="w-32 flex-shrink-0 sm:w-36">
+            {!c ? (
+              <div className="space-y-2">
                 <Skeleton className="aspect-square w-full rounded-xl" />
                 <Skeleton className="h-4 w-2/3" />
               </div>
-            ))
-          : categories.map((c) => (
-              <Link key={c.category} to={`/category/${c.category}`}>
+            ) : (
+              <Link to={`/category/${c.category}`}>
                 <motion.div
                   whileHover={{ y: -4 }}
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -40,7 +43,9 @@ export default function CategoryShowcase({ categories }) {
                   </div>
                 </motion.div>
               </Link>
-            ))}
+            )}
+          </div>
+        ))}
       </div>
     </section>
   );
