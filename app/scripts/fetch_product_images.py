@@ -42,20 +42,20 @@ PHOTOS_PER_CATEGORY = 8
 # Spreading across several specific queries (real brands, real equipment)
 # gives an actually-diverse, recognizable pool instead.
 CATEGORY_QUERIES = {
-    "electronics": "modern smartphone flat lay minimal",
-    "appliances": "modern kitchen appliance minimal white",
-    "apparel": "fashion clothing editorial minimal",
-    "computers": "laptop computer minimal desk",
-    "furniture": "minimalist furniture interior design",
-    "construction": "construction tools flat lay minimal",
-    "kids": "kids toys minimal flat lay",
-    "accessories": "fashion accessories flat lay minimal",
+    "electronics": ["smartphone photography", "wireless headphones", "smart tv screen", "digital camera minimal"],
+    "appliances": ["refrigerator kitchen", "washing machine", "coffee maker minimal", "microwave oven"],
+    "apparel": ["denim jeans fashion", "leather jacket fashion", "sneakers shoes editorial", "fashion clothing rack"],
+    "computers": ["laptop computer minimal desk", "gaming pc setup", "computer monitor desk", "mechanical keyboard"],
+    "furniture": ["modern sofa living room", "wooden dining table", "office chair minimal", "bed bedroom furniture"],
+    "construction": ["power tools construction", "hammer nails tools", "toolbox tools minimal", "drill tool"],
+    "kids": ["colorful kids toys", "stuffed animal toy", "wooden building blocks toy", "baby stroller"],
+    "accessories": ["wrist watch minimal", "sunglasses fashion editorial", "leather handbag", "jewelry accessories minimal"],
     "sport": ["dumbbells gym", "barbell weights gym", "gym bench press equipment", "gym equipment minimal"],
     "auto": ["BMW car exterior", "Mercedes Benz car exterior", "Toyota car exterior", "Audi car exterior"],
-    "stationery": "stationery flat lay minimal aesthetic",
-    "country_yard": "garden tools minimal outdoor",
-    "medicine": "pharmacy medicine minimal flat lay",
-    "generic": "minimalist product photography studio",
+    "stationery": ["notebook pen stationery", "office desk supplies", "art supplies colored pencils", "planner notebook minimal"],
+    "country_yard": ["garden tools minimal", "lawn mower yard", "watering can garden", "outdoor patio furniture"],
+    "medicine": ["pharmacy medicine bottles", "vitamins supplements minimal", "first aid kit", "medical equipment minimal"],
+    "generic": ["minimalist product photography studio", "product photography white background"],
 }
 
 
