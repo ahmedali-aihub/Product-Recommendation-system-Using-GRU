@@ -41,20 +41,46 @@ PHOTOS_PER_CATEGORY = 8
 # returned 8 close-ups of the same Camaro badge, not 8 different cars.
 # Spreading across several specific queries (real brands, real equipment)
 # gives an actually-diverse, recognizable pool instead.
+# Queries are weighted toward each category's REAL sub-category (category_leaf)
+# composition in the products table -- not guessed from the category_top name
+# alone. That guess was wrong twice: "auto" sounds like cars, but 88% of it is
+# actually car electronics (player/videoregister/alarm -- car stereos, dash
+# cams, alarms), and "sport" sounds like gym equipment, but 68% of it is
+# bicycles. A query list repeats its dominant leaf's query to weight the pool
+# toward it (e.g. two bicycle queries + one tennis + one ski, roughly matching
+# sport's real 68/11/10/7 split), without literally duplicating a query
+# string (which would just re-fetch the same top results twice).
 CATEGORY_QUERIES = {
-    "electronics": ["smartphone photography", "wireless headphones", "smart tv screen", "digital camera minimal"],
-    "appliances": ["refrigerator kitchen", "washing machine", "coffee maker minimal", "microwave oven"],
-    "apparel": ["denim jeans fashion", "leather jacket fashion", "sneakers shoes editorial", "fashion clothing rack"],
-    "computers": ["laptop computer minimal desk", "gaming pc setup", "computer monitor desk", "mechanical keyboard"],
-    "furniture": ["modern sofa living room", "wooden dining table", "office chair minimal", "bed bedroom furniture"],
-    "construction": ["power tools construction", "hammer nails tools", "toolbox tools minimal", "drill tool"],
-    "kids": ["colorful kids toys", "stuffed animal toy", "wooden building blocks toy", "baby stroller"],
-    "accessories": ["wrist watch minimal", "sunglasses fashion editorial", "leather handbag", "jewelry accessories minimal"],
-    "sport": ["dumbbells gym", "barbell weights gym", "gym bench press equipment", "gym equipment minimal"],
-    "auto": ["BMW car exterior", "Mercedes Benz car exterior", "Toyota car exterior", "Audi car exterior"],
-    "stationery": ["notebook pen stationery", "office desk supplies", "art supplies colored pencils", "planner notebook minimal"],
-    "country_yard": ["garden tools minimal", "lawn mower yard", "watering can garden", "outdoor patio furniture"],
-    "medicine": ["pharmacy medicine bottles", "vitamins supplements minimal", "first aid kit", "medical equipment minimal"],
+    # clocks 51%, headphone 14%, smartphone 9%, tv/subwoofer/acoustic ~14%
+    "electronics": ["wall clock minimal", "modern wall clock design", "wireless headphones", "smartphone photography"],
+    # no single dominant leaf (28 leaves) -- flat mix of the top kitchen appliances
+    "appliances": ["refrigerator kitchen", "kitchen extractor hood", "oven stove kitchen", "vacuum cleaner"],
+    # shoes+keds+sandals ~69% (footwear), underwear 14%
+    "apparel": ["sneakers shoes editorial", "canvas sneakers shoes", "underwear clothing minimal", "sandals shoes"],
+    "computers": ["laptop computer minimal desk", "desktop computer tower", "computer mouse", "computer monitor desk"],
+    "furniture": ["modern chair minimal", "bed bedroom furniture", "wooden cabinet furniture", "wooden dining table"],
+    "construction": ["power drill tool", "faucet bathroom fixture", "water pump tool", "circular saw tool"],
+    # toys 42%, carriage (stroller) 31%, dolls 12%, skates 8%
+    "kids": ["colorful kids toys", "baby stroller carriage", "doll toy", "roller skates"],
+    # bag 78%, wallet 20%, umbrella 2%
+    "accessories": ["leather handbag", "designer handbag fashion", "leather wallet"],
+    # bicycle 68%, tennis 11%, ski 10%, snowboard 7%
+    "sport": ["bicycle cycling outdoor", "road bike bicycle", "tennis racket", "ski snowboard equipment"],
+    # player 42%, videoregister (dash cam) 24%, alarm 11%, compressor/radar/parktronic 21%
+    "auto": ["car stereo audio system", "car multimedia player dashboard", "dash cam dashboard camera", "car alarm system"],
+    # cartrige (printer ink) 100% -- Pexels has no real cartridge product
+    # photography (tried several queries, all returned unrelated results:
+    # printing presses, ink-in-water art, laser cutters). Falls back to
+    # general stationery/office-supply flat lays -- same honest tradeoff as
+    # everywhere else: category-representative, not exact-SKU.
+    "stationery": ["notebook pen desk flat lay", "office desk supplies minimal", "art supplies colored pencils flat lay"],
+    # lawn_mower 86%, cultivator 10%
+    "country_yard": ["lawn mower garden grass", "lawn mower cutting grass", "garden cultivator tool"],
+    # tonometer (blood pressure monitor) 100% -- same Pexels gap as
+    # stationery (tried "blood pressure monitor/cuff/sphygmomanometer", all
+    # returned hospital-bed or blood-donation scenes, not product shots).
+    # Falls back to general clean medical-device flat lays.
+    "medicine": ["medical equipment flat lay minimal", "stethoscope medical device minimal"],
     "generic": ["minimalist product photography studio", "product photography white background"],
 }
 
