@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/context/CartContext.jsx";
 import { getProductImageUrl } from "@/lib/productImage";
 import { recordProductView } from "@/lib/sessionHistory";
+import { useSlowLoad } from "@/lib/useSlowLoad";
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
@@ -21,6 +22,7 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState(null);
+  const isSlow = useSlowLoad(!product && !notFound);
 
   useEffect(() => {
     setNotFound(false);
@@ -56,12 +58,20 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="flex flex-col gap-8 sm:flex-row">
-        <Skeleton className="h-72 w-72 rounded-xl" />
-        <div className="flex-1 space-y-3">
-          <Skeleton className="h-8 w-1/2" />
-          <Skeleton className="h-4 w-1/4" />
-          <Skeleton className="h-10 w-32" />
+      <div>
+        {isSlow && (
+          <div className="mb-4 rounded-lg border bg-card p-3 text-sm text-muted-foreground">
+            Waking up the server -- this backend runs on a free tier that sleeps when idle, so
+            the first load can take up to a minute. It'll be fast from here on.
+          </div>
+        )}
+        <div className="flex flex-col gap-8 sm:flex-row">
+          <Skeleton className="h-72 w-72 rounded-xl" />
+          <div className="flex-1 space-y-3">
+            <Skeleton className="h-8 w-1/2" />
+            <Skeleton className="h-4 w-1/4" />
+            <Skeleton className="h-10 w-32" />
+          </div>
         </div>
       </div>
     );

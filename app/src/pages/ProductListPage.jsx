@@ -11,6 +11,7 @@ import ProductCard from "@/components/ProductCard.jsx";
 import RecommendationsSection from "@/components/RecommendationsSection.jsx";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getViewedProducts } from "@/lib/sessionHistory";
+import { useSlowLoad } from "@/lib/useSlowLoad";
 
 const gridVariants = {
   hidden: {},
@@ -34,6 +35,7 @@ export default function ProductListPage() {
   const [categories, setCategories] = useState([]);
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
+  const isSlow = useSlowLoad(loading);
 
   useEffect(() => {
     api.getCategories().then(setCategories).catch(() => setCategories([]));
@@ -93,15 +95,23 @@ export default function ProductListPage() {
       )}
 
       {loading && (
-        <div className="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="space-y-2">
-              <Skeleton className="aspect-square w-full rounded-xl" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/3" />
+        <>
+          {isSlow && (
+            <div className="mb-4 rounded-lg border bg-card p-3 text-sm text-muted-foreground">
+              Waking up the server -- this backend runs on a free tier that sleeps when idle, so
+              the first load can take up to a minute. It'll be fast from here on.
             </div>
-          ))}
-        </div>
+          )}
+          <div className="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="aspect-square w-full rounded-xl" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/3" />
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {!loading && listing && listing.items.length === 0 && (
