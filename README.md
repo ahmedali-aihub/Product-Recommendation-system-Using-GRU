@@ -8,6 +8,8 @@ relying on a static "users who liked X also liked Y" matrix.
 > **Core question the model answers:** given what this user just viewed/clicked
 > in this session, what are they most likely to want next?
 
+**Live demo:** [product-recommendation-system-using-wine.vercel.app](https://product-recommendation-system-using-wine.vercel.app) — click into a few products, then check the homepage's "Recommended for you." See [Section 14](#14-deployment) for how it's hosted.
+
 ---
 
 ## Table of Contents
@@ -25,6 +27,7 @@ relying on a static "users who liked X also liked Y" matrix.
 - [11. Key Design Decisions & Why](#11-key-design-decisions--why)
 - [12. Project Roadmap](#12-project-roadmap)
 - [13. Results](#13-results)
+- [14. Deployment](#14-deployment)
 
 ---
 
@@ -567,7 +570,7 @@ reviewer — stated here explicitly rather than left implicit:
 | 2 — Baseline model | GRU4Rec (sampled softmax) in Keras, popularity baseline, Recall@10/NDCG@10 | ☑ `src/model/*.py` built, trained (1M rows, test Recall@10=0.45 vs 0.09 baseline), live behind `/predict` — ☐ full 20M-row run for a higher ceiling |
 | 3 — Serving | Storefront API + React UI (browse, search, cart) + `/predict` + "You might also like" | ☑ built & verified end-to-end (real data, no console/CORS errors) — running on a small-scale model pending a full retrain (Phase 2) |
 | 4 — Cold-start (stretch) | CLIP embeddings, FAISS retrieval, API fallback path | ☐ |
-| 5 — Polish | README, error handling, demo recording, deployment | ☐ |
+| 5 — Polish | README, error handling, demo recording, deployment | ☑ deployed (Section 14) — ☐ demo recording |
 
 ---
 
@@ -596,6 +599,49 @@ with loss dropping 3.62 → 1.91 → 1.33 and Recall@10 = **0.3915** vs a
 popularity-baseline Recall@10 of **0.0700** — a 5.6x improvement after just 3
 epochs on one day of data, confirming the sampled-softmax approach is
 actually learning, not just running.
+
+---
+
+## 14. Deployment
+
+Live at **[product-recommendation-system-using-wine.vercel.app](https://product-recommendation-system-using-wine.vercel.app)**, split across three free-tier services, each auto-deploying from `main` on every push:
+
+| Layer | Host | Notes |
+|---|---|---|
+| Frontend (`app/`) | [Vercel](https://vercel.com) | Root directory `app`, framework auto-detected (Vite). Env var `VITE_API_BASE_URL` points at the Render URL below. |
+| Backend (`src/serving/`) | [Render](https://render.com) | Python native runtime (not Docker), pinned to Python 3.11 via `.python-version` — TensorFlow has no wheels for very new Python versions yet. Reads `render.yaml` at the repo root. |
+| Database (`products`/`carts`/`cart_items` only) | [Aiven](https://aiven.io) MySQL | Free tier. Requires SSL via a committed CA cert (`db/ca.pem`, a public trust anchor, not a secret) passed as `MYSQL_SSL_CA`. |
+
+**Deliberately not in the cloud:** the 20M-row `events` table and the whole
+training pipeline (`src/data/`, `src/model/`) stay local-only. Re-read the
+actual serving routers (`src/serving/routers/*.py`) and none of them ever
+query `events` — the deployed backend only ever needs the small `products`
+catalog (141,694 rows), so there's no reason to migrate 20M rows or run
+training in the cloud. The model is trained locally and its weights
+(`models/gru4rec.weights.h5`, well under GitHub's 100MB limit) are committed
+directly — a new commit + push is what ships a retrained model, no separate
+deploy step.
+
+**Free-tier caveat — both layers sleep on idle, on different timers:**
+Render's backend spins down after ~15 min idle (next request pays a slow
+cold start: importing TensorFlow + building the model). Aiven's MySQL
+*powers off* after the same ~15 min window — worse than Render's cold start,
+because a powered-off instance's hostname drops out of DNS entirely until
+manually powered back on in the Aiven console; nothing wakes it
+automatically. **[UptimeRobot](https://uptimerobot.com)** pings
+`/api/products?page=1&page_size=1` every 5 minutes, which exercises both the
+backend process and a real DB query — keeping both layers warm with one
+external ping. (An earlier attempt used a GitHub Actions scheduled workflow
+for this; abandoned because GitHub's cron scheduler is best-effort, not
+guaranteed — observed gaps of 47–90 minutes between "every 10 min" runs,
+comfortably long enough for Aiven to power off in between.)
+
+**One-time database setup**, if standing this up again elsewhere:
+```bash
+mysql --ssl-mode=REQUIRED -h <aiven-host> -P <port> -u avnadmin -p defaultdb < db/products_schema.sql
+mysqldump -h localhost -u recommender_app -p product_recommender products \
+  | mysql --ssl-mode=REQUIRED -h <aiven-host> -P <port> -u avnadmin -p <aiven-db-name>
+```
 
 Scaling the steady-state (~440-510s/epoch) by the ratio of training pairs
 (694K sample vs. ~13-15M at full scale) gives a real estimate for the full
