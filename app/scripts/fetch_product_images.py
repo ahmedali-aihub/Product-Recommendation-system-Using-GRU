@@ -33,6 +33,14 @@ PHOTOS_PER_CATEGORY = 8
 # Hand-picked queries aimed at a clean, editorial/minimal look (Apple/CK-style),
 # not generic clip-art -- this is the part that actually determines whether
 # the site looks premium or looks like stock-photo soup.
+#
+# A category can map to either a single query (fetches PHOTOS_PER_CATEGORY
+# from it) or a list of queries (splits PHOTOS_PER_CATEGORY across them).
+# The list form exists because a single query often returns one
+# photographer's whole shoot -- e.g. "car detail minimal automotive"
+# returned 8 close-ups of the same Camaro badge, not 8 different cars.
+# Spreading across several specific queries (real brands, real equipment)
+# gives an actually-diverse, recognizable pool instead.
 CATEGORY_QUERIES = {
     "electronics": "modern smartphone flat lay minimal",
     "appliances": "modern kitchen appliance minimal white",
@@ -42,8 +50,8 @@ CATEGORY_QUERIES = {
     "construction": "construction tools flat lay minimal",
     "kids": "kids toys minimal flat lay",
     "accessories": "fashion accessories flat lay minimal",
-    "sport": "sports equipment minimal flat lay",
-    "auto": "car detail minimal automotive",
+    "sport": ["dumbbells gym", "barbell weights gym", "gym bench press equipment", "gym equipment minimal"],
+    "auto": ["BMW car exterior", "Mercedes Benz car exterior", "Toyota car exterior", "Audi car exterior"],
     "stationery": "stationery flat lay minimal aesthetic",
     "country_yard": "garden tools minimal outdoor",
     "medicine": "pharmacy medicine minimal flat lay",
@@ -80,42 +88,56 @@ def download(url, dest_path):
         dest_path.write_bytes(response.read())
 
 
-def fetch_all():
-    api_key = load_pexels_api_key()
-    counts = {}
+def fetch_category(category, query, api_key):
+    """query may be a single string or a list of strings (split across them)."""
+    category_dir = IMAGES_DIR / category
+    category_dir.mkdir(parents=True, exist_ok=True)
 
-    for category, query in CATEGORY_QUERIES.items():
-        category_dir = IMAGES_DIR / category
-        category_dir.mkdir(parents=True, exist_ok=True)
+    queries = query if isinstance(query, list) else [query]
+    per_query = max(1, -(-PHOTOS_PER_CATEGORY // len(queries)))  # ceil division
 
-        print(f"Fetching '{query}' for category '{category}'...")
+    saved = 0
+    for q in queries:
+        print(f"Fetching '{q}' for category '{category}'...")
         try:
-            result = search_photos(query, api_key)
+            result = search_photos(q, api_key, per_page=per_query)
         except urllib.error.HTTPError as e:
-            print(f"  HTTP error {e.code} for '{category}': {e.reason}")
-            counts[category] = 0
+            print(f"  HTTP error {e.code} for '{category}' query '{q}': {e.reason}")
+            time.sleep(0.5)
             continue
 
-        photos = result.get("photos", [])
-        saved = 0
-        for i, photo in enumerate(photos, start=1):
-            image_url = photo["src"]["large"]
-            dest_path = category_dir / f"{i}.jpg"
+        for photo in result.get("photos", []):
+            if saved >= PHOTOS_PER_CATEGORY:
+                break
+            saved += 1
+            dest_path = category_dir / f"{saved}.jpg"
             try:
-                download(image_url, dest_path)
-                saved += 1
+                download(photo["src"]["large"], dest_path)
             except urllib.error.URLError as e:
-                print(f"  Failed to download image {i} for '{category}': {e}")
-
-        counts[category] = saved
-        print(f"  Saved {saved} photos.")
+                print(f"  Failed to download image {saved} for '{category}': {e}")
+                saved -= 1
         time.sleep(0.5)  # stay well under Pexels' rate limit
+
+    print(f"  Saved {saved} photos for '{category}'.")
+    return saved
+
+
+def fetch_all(categories=None):
+    api_key = load_pexels_api_key()
+    counts = {}
+    targets = {c: CATEGORY_QUERIES[c] for c in categories} if categories else CATEGORY_QUERIES
+
+    for category, query in targets.items():
+        counts[category] = fetch_category(category, query, api_key)
 
     return counts
 
 
 if __name__ == "__main__":
-    counts = fetch_all()
+    import sys
+
+    categories_arg = sys.argv[1:] or None  # e.g. `python fetch_product_images.py auto sport`
+    counts = fetch_all(categories_arg)
 
     print("\nFinal counts per category:")
     for category, count in counts.items():
