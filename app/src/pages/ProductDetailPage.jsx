@@ -4,12 +4,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { api } from "@/api/client";
-import RecommendationsSection from "@/components/RecommendationsSection.jsx";
+import ProductRow from "@/components/ProductRow.jsx";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/context/CartContext.jsx";
 import { getProductImageUrl } from "@/lib/productImage";
-import { getViewedProducts, recordProductView } from "@/lib/sessionHistory";
+import { recordProductView } from "@/lib/sessionHistory";
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
@@ -20,19 +20,32 @@ export default function ProductDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
-  const [viewedProducts, setViewedProducts] = useState(getViewedProducts());
+  const [relatedProducts, setRelatedProducts] = useState(null);
 
   useEffect(() => {
     setNotFound(false);
     setProduct(null);
+    setRelatedProducts(null);
     setQuantity(1);
     api
       .getProduct(productId)
       .then((p) => {
         setProduct(p);
-        // Record the view only once the product is confirmed to exist --
-        // this is what /predict reads as "the session so far".
-        setViewedProducts(recordProductView(p.product_id));
+        // Record the view -- still drives the homepage's "Recommended for
+        // you" (an actual model prediction). This page's own "You might
+        // also like" is plain same-category browsing, not a prediction.
+        recordProductView(p.product_id);
+
+        if (!p.category_top) {
+          setRelatedProducts([]);
+          return;
+        }
+        api
+          .getProducts({ category: p.category_top, page: 1, pageSize: 9 })
+          .then((result) => {
+            setRelatedProducts(result.items.filter((item) => item.product_id !== p.product_id).slice(0, 8));
+          })
+          .catch(() => setRelatedProducts([]));
       })
       .catch(() => setNotFound(true));
   }, [productId]);
@@ -125,7 +138,9 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      <RecommendationsSection productIds={viewedProducts} />
+      {relatedProducts == null || relatedProducts.length > 0 ? (
+        <ProductRow title="You might also like" items={relatedProducts} />
+      ) : null}
     </div>
   );
 }
