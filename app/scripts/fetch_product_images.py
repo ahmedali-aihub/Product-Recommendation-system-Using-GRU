@@ -84,6 +84,84 @@ CATEGORY_QUERIES = {
     "generic": ["minimalist product photography studio", "product photography white background"],
 }
 
+# The queries above blend several real sub-categories (category_leaf) into
+# ONE shared photo pool per top-level category -- e.g. electronics blends
+# clock + headphone + smartphone + tv photos into one pool, and a product's
+# photo is picked by `product_id % pool_size`, with no regard for which of
+# those it actually is. A "Samsung Smartphone" can end up showing a clock.
+#
+# This maps the dominant leaves to their OWN single-subject query, so
+# products get photos from a pool that actually matches their real type.
+# Only the leaves that make up most of a category's volume are covered
+# (the ones already identified above); long-tail leaves fall back to the
+# blended CATEGORY_QUERIES pool for their top-level category.
+PHOTOS_PER_LEAF = 6
+LEAF_QUERIES = {
+    "electronics": {
+        "clocks": ["wall clock minimal", "modern wall clock design"],
+        "headphone": "wireless headphones",
+        "smartphone": "smartphone photography",
+        "tv": "television screen minimal",
+    },
+    "appliances": {
+        "refrigerators": "refrigerator kitchen",
+        "hood": "kitchen extractor hood",
+        "oven": "oven stove kitchen",
+        "vacuum": "vacuum cleaner",
+    },
+    "apparel": {
+        "shoes": "sneakers shoes editorial",
+        "keds": "canvas sneakers shoes",
+        "underwear": "underwear clothing minimal",
+        "sandals": "sandals shoes",
+    },
+    "computers": {
+        "notebook": "laptop computer minimal desk",
+        "desktop": "desktop computer tower",
+        "mouse": "computer mouse",
+        "monitor": "computer monitor desk",
+    },
+    "furniture": {
+        "chair": "modern chair minimal",
+        "bed": "bed bedroom furniture",
+        "cabinet": "wooden cabinet furniture",
+        "table": "wooden dining table",
+    },
+    "construction": {
+        "drill": "power drill tool",
+        "faucet": "faucet bathroom fixture",
+        "pump": "water pump tool",
+        "saw": "circular saw tool",
+    },
+    "kids": {
+        "toys": "colorful kids toys",
+        "carriage": "baby stroller carriage",
+        "dolls": "doll toy",
+        "skates": "roller skates",
+    },
+    "accessories": {
+        "bag": ["leather handbag", "designer handbag fashion"],
+        "wallet": "leather wallet",
+    },
+    "sport": {
+        "bicycle": ["bicycle cycling outdoor", "road bike bicycle"],
+        "tennis": "tennis racket",
+        "ski": "ski equipment snow",
+        "snowboard": "snowboard equipment",
+    },
+    "auto": {
+        "player": ["car stereo audio system", "car multimedia player dashboard"],
+        "videoregister": "dash cam dashboard camera",
+        "alarm": "car alarm system",
+    },
+    "country_yard": {
+        "lawn_mower": ["lawn mower garden grass", "lawn mower cutting grass"],
+        "cultivator": "garden cultivator tool",
+    },
+    # stationery and medicine are each 100% one leaf already -- their
+    # top-level CATEGORY_QUERIES pool IS the leaf pool, no split needed.
+}
+
 
 def load_pexels_api_key():
     env_path = REPO_ROOT / ".env"
@@ -114,47 +192,65 @@ def download(url, dest_path):
         dest_path.write_bytes(response.read())
 
 
-def fetch_category(category, query, api_key):
+def fetch_pool(dest_dir, label, query, api_key, photos_wanted):
     """query may be a single string or a list of strings (split across them)."""
-    category_dir = IMAGES_DIR / category
-    category_dir.mkdir(parents=True, exist_ok=True)
+    dest_dir.mkdir(parents=True, exist_ok=True)
 
     queries = query if isinstance(query, list) else [query]
-    per_query = max(1, -(-PHOTOS_PER_CATEGORY // len(queries)))  # ceil division
+    per_query = max(1, -(-photos_wanted // len(queries)))  # ceil division
 
     saved = 0
     for q in queries:
-        print(f"Fetching '{q}' for category '{category}'...")
+        print(f"Fetching '{q}' for '{label}'...")
         try:
             result = search_photos(q, api_key, per_page=per_query)
         except urllib.error.HTTPError as e:
-            print(f"  HTTP error {e.code} for '{category}' query '{q}': {e.reason}")
+            print(f"  HTTP error {e.code} for '{label}' query '{q}': {e.reason}")
             time.sleep(0.5)
             continue
 
         for photo in result.get("photos", []):
-            if saved >= PHOTOS_PER_CATEGORY:
+            if saved >= photos_wanted:
                 break
             saved += 1
-            dest_path = category_dir / f"{saved}.jpg"
+            dest_path = dest_dir / f"{saved}.jpg"
             try:
                 download(photo["src"]["large"], dest_path)
             except urllib.error.URLError as e:
-                print(f"  Failed to download image {saved} for '{category}': {e}")
+                print(f"  Failed to download image {saved} for '{label}': {e}")
                 saved -= 1
         time.sleep(0.5)  # stay well under Pexels' rate limit
 
-    print(f"  Saved {saved} photos for '{category}'.")
+    print(f"  Saved {saved} photos for '{label}'.")
     return saved
 
 
 def fetch_all(categories=None):
+    """Top-level category pools -- the blended fallback used by any product
+    whose leaf isn't individually covered by fetch_all_leaves()."""
     api_key = load_pexels_api_key()
     counts = {}
     targets = {c: CATEGORY_QUERIES[c] for c in categories} if categories else CATEGORY_QUERIES
 
     for category, query in targets.items():
-        counts[category] = fetch_category(category, query, api_key)
+        counts[category] = fetch_pool(IMAGES_DIR / category, category, query, api_key, PHOTOS_PER_CATEGORY)
+
+    return counts
+
+
+def fetch_all_leaves(categories=None):
+    """Per-leaf pools -- what most products actually resolve to. Saved under
+    public/images/{category_top}/leaf-{category_leaf}/{n}.jpg."""
+    api_key = load_pexels_api_key()
+    counts = {}
+    targets = {c: LEAF_QUERIES[c] for c in categories} if categories else LEAF_QUERIES
+
+    for category, leaves in targets.items():
+        counts[category] = {}
+        for leaf, query in leaves.items():
+            label = f"{category}/{leaf}"
+            dest_dir = IMAGES_DIR / category / f"leaf-{leaf}"
+            counts[category][leaf] = fetch_pool(dest_dir, label, query, api_key, PHOTOS_PER_LEAF)
 
     return counts
 
@@ -162,11 +258,22 @@ def fetch_all(categories=None):
 if __name__ == "__main__":
     import sys
 
-    categories_arg = sys.argv[1:] or None  # e.g. `python fetch_product_images.py auto sport`
-    counts = fetch_all(categories_arg)
-
-    print("\nFinal counts per category:")
-    for category, count in counts.items():
-        print(f"  {category}: {count}")
-
-    print("\nNow update CATEGORY_IMAGE_COUNTS in src/lib/productImage.js with these counts.")
+    # `python fetch_product_images.py auto sport` -> top-level pools for those
+    # `python fetch_product_images.py --leaves auto sport` -> leaf pools for those
+    # `python fetch_product_images.py --leaves` -> leaf pools for everything
+    args = sys.argv[1:]
+    if args and args[0] == "--leaves":
+        categories_arg = args[1:] or None
+        counts = fetch_all_leaves(categories_arg)
+        print("\nFinal leaf counts:")
+        for category, leaves in counts.items():
+            for leaf, count in leaves.items():
+                print(f"  {category}/{leaf}: {count}")
+        print("\nNow update CATEGORY_LEAF_IMAGE_COUNTS in src/lib/productImage.js with these counts.")
+    else:
+        categories_arg = args or None
+        counts = fetch_all(categories_arg)
+        print("\nFinal counts per category:")
+        for category, count in counts.items():
+            print(f"  {category}: {count}")
+        print("\nNow update CATEGORY_IMAGE_COUNTS in src/lib/productImage.js with these counts.")
