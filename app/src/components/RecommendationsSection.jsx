@@ -6,7 +6,12 @@ import ProductRow from "@/components/ProductRow.jsx";
 // Session-based, not account-based: `productIds` is whatever short recent
 // sequence the caller has on hand (viewed-product history on a product
 // page, current cart contents in the drawer) -- not tied to a login.
-export default function RecommendationsSection({ productIds, title = "You might also like", className = "mt-12" }) {
+export default function RecommendationsSection({
+  productIds,
+  title = "You might also like",
+  subtitle,
+  className = "mt-12",
+}) {
   const [items, setItems] = useState(null);
   // Arrays compare by reference -- a fresh literal from the caller (e.g.
   // cart.items.map(...)) would re-trigger this effect on every unrelated
@@ -34,5 +39,5 @@ export default function RecommendationsSection({ productIds, title = "You might 
 
   if (items && items.length === 0) return null;
 
-  return <ProductRow title={title} items={items} className={className} />;
+  return <ProductRow title={title} subtitle={subtitle} items={items} className={className} />;
 }

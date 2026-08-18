@@ -66,7 +66,11 @@ export default function Navbar() {
           <Link to="/" className="flex-shrink-0 whitespace-nowrap text-muted-foreground hover:text-foreground">
             All
           </Link>
-          {categories.map((c) => (
+          {/* Categories already come back sorted by product_count DESC, so the
+              first 6 are the most-browsed -- the rest are one click away via
+              "More" (the homepage's "Shop by Category" grid shows all of them),
+              rather than crowding this bar with all 13. */}
+          {categories.slice(0, 6).map((c) => (
             <Link
               key={c.category}
               to={`/category/${c.category}`}
@@ -75,6 +79,11 @@ export default function Navbar() {
               {c.category.replace("_", " ")}
             </Link>
           ))}
+          {categories.length > 6 && (
+            <Link to="/" className="flex-shrink-0 whitespace-nowrap text-muted-foreground hover:text-foreground">
+              More &darr;
+            </Link>
+          )}
         </div>
       </nav>
     </header>

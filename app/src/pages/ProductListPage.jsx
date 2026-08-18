@@ -70,7 +70,11 @@ export default function ProductListPage() {
             update live based on what you just viewed.
           </div>
           <CategoryShowcase categories={categories} />
-          <RecommendationsSection productIds={getViewedProducts()} title="Recommended for you" />
+          <RecommendationsSection
+            productIds={getViewedProducts()}
+            title="Recommended for you"
+            subtitle="Based on the products you've viewed this session"
+          />
           {categories.slice(0, 2).map((c) => (
             <CategoryProductRow
               key={c.category}

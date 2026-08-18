@@ -5,11 +5,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 // Presentational only -- title + horizontal-scrolling row of ProductCards,
 // with skeleton placeholders while `items` is still loading (undefined/null).
-export default function ProductRow({ title, items, viewAllHref, className = "mt-12" }) {
+export default function ProductRow({ title, subtitle, items, viewAllHref, className = "mt-12" }) {
   return (
     <section className={className}>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+          {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+        </div>
         {viewAllHref && (
           <Link to={viewAllHref} className="text-sm text-muted-foreground hover:text-foreground">
             See all &rarr;
